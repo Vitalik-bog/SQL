@@ -1,0 +1,11 @@
+//Напишите запрос, который обновляет email пользователя с именем 'Alice'
+UPDATE users
+SET email = 'new.alice.email@example.com'
+WHERE name = 'Alice';
+
+s
+//Напишите запрос, который выводит имена пользователей и количество их постов (даже если у пользователя 0 постов).
+SELECT users.name, COUNT(posts.id) AS post_count
+FROM users
+LEFT JOIN posts ON users.id = posts.user_id
+GROUP BY users.id, users.name;
