@@ -1,0 +1,10 @@
+-- Проверяем созданные таблицы
+SHOW TABLES;
+
+-- Смотрим структуру таблиц
+DESCRIBE users;
+DESCRIBE posts;
+
+-- Проверяем данные
+SELECT * FROM users;
+SELECT * FROM posts;
