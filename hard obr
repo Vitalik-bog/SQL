@@ -1,0 +1,170 @@
+Запрос 1: Инвестиции клиентов с детальной информацией о депозитах
+
+sql
+SELECT 
+    i.Investment_ID,
+    i.Client_ID,
+    i.Amount,
+    i.Purchase_Date,
+    d.Bank_Name,
+    d.Deposit_Name,
+    d.Interest_Rate,
+    d.Term_Months
+FROM INVESTMENT i
+INNER JOIN DEPOSIT d ON i.Deposit_ID = d.Deposit_ID
+WHERE i.Investment_Type = 'DEPOSIT' 
+    AND i.Status = 'ACTIVE'
+ORDER BY i.Amount DESC;
+Запрос 2: Текущая стоимость инвестиций в ценные бумаги
+
+sql
+SELECT 
+    i.Investment_ID,
+    i.Client_ID,
+    i.Security_ID,
+    i.Quantity,
+    i.Purchase_Rate as Purchase_Price,
+    qh.Close_Price as Current_Price,
+    ROUND(i.Quantity * qh.Close_Price, 2) as Current_Value,
+    ROUND((qh.Close_Price - i.Purchase_Rate) / i.Purchase_Rate * 100, 2) as Profit_Percent
+FROM INVESTMENT i
+INNER JOIN QUOTE_HISTORY qh ON i.Security_ID = qh.Security_ID
+WHERE i.Investment_Type = 'SECURITY' 
+    AND i.Status = 'ACTIVE'
+    AND qh.Quote_Date = (SELECT MAX(Quote_Date) 
+                         FROM QUOTE_HISTORY 
+                         WHERE Security_ID = i.Security_ID);
+Запрос 3: Клиенты с инвестициями в оба типа активов
+
+sql
+SELECT 
+    i1.Client_ID,
+    COUNT(DISTINCT i1.Investment_ID) as Security_Investments,
+    COUNT(DISTINCT i2.Investment_ID) as Deposit_Investments,
+    SUM(i1.Amount) as Total_Security_Amount,
+    SUM(i2.Amount) as Total_Deposit_Amount
+FROM INVESTMENT i1
+INNER JOIN INVESTMENT i2 ON i1.Client_ID = i2.Client_ID
+WHERE i1.Investment_Type = 'SECURITY' 
+    AND i2.Investment_Type = 'DEPOSIT'
+    AND i1.Status = 'ACTIVE'
+    AND i2.Status = 'ACTIVE'
+GROUP BY i1.Client_ID
+HAVING Security_Investments > 0 AND Deposit_Investments > 0;
+Запрос 4: Депозиты с лучшей процентной ставкой в каждом банке
+
+sql
+SELECT 
+    d1.Bank_Name,
+    d1.Deposit_Name,
+    d1.Interest_Rate,
+    d1.Term_Months,
+    d1.Min_Amount
+FROM DEPOSIT d1
+WHERE d1.Interest_Rate = (SELECT MAX(d2.Interest_Rate) 
+                         FROM DEPOSIT d2 
+                         WHERE d2.Bank_Name = d1.Bank_Name 
+                         AND d2.Is_Available = TRUE)
+    AND d1.Is_Available = TRUE
+ORDER BY d1.Interest_Rate DESC;
+Запрос 5: Ценные бумаги с ростом цены за последний месяц
+
+sql
+SELECT 
+    qh_current.Security_ID,
+    qh_old.Close_Price as Price_Month_Ago,
+    qh_current.Close_Price as Current_Price,
+    ROUND((qh_current.Close_Price - qh_old.Close_Price) / qh_old.Close_Price * 100, 2) as Growth_Percent
+FROM QUOTE_HISTORY qh_current
+INNER JOIN QUOTE_HISTORY qh_old ON qh_current.Security_ID = qh_old.Security_ID
+WHERE qh_current.Quote_Date = (SELECT MAX(Quote_Date) FROM QUOTE_HISTORY)
+    AND qh_old.Quote_Date = (SELECT MAX(Quote_Date) 
+                            FROM QUOTE_HISTORY 
+                            WHERE Security_ID = qh_current.Security_ID 
+                            AND Quote_Date <= DATE_SUB(qh_current.Quote_Date, INTERVAL 1 MONTH))
+    AND qh_current.Close_Price > qh_old.Close_Price
+ORDER BY Growth_Percent DESC;
+Запрос 6: Клиенты с наибольшей общей суммой инвестиций
+
+sql
+SELECT 
+    Client_ID,
+    COUNT(*) as Total_Investments,
+    SUM(Amount) as Total_Investment_Amount,
+    AVG(Amount) as Average_Investment,
+    MAX(Amount) as Largest_Investment
+FROM INVESTMENT 
+WHERE Status = 'ACTIVE'
+GROUP BY Client_ID
+HAVING Total_Investment_Amount > 500000
+ORDER BY Total_Investment_Amount DESC;
+Запрос 7: Доходность депозитных инвестиций с учетом капитализации
+
+sql
+SELECT 
+    i.Investment_ID,
+    i.Client_ID,
+    i.Amount,
+    d.Bank_Name,
+    d.Deposit_Name,
+    d.Interest_Rate,
+    d.Term_Months,
+    d.Capitalization,
+    ROUND(i.Amount * POWER(1 + d.Interest_Rate/100, d.Term_Months/12) - i.Amount, 2) as Expected_Profit
+FROM INVESTMENT i
+INNER JOIN DEPOSIT d ON i.Deposit_ID = d.Deposit_ID
+WHERE i.Investment_Type = 'DEPOSIT' 
+    AND i.Status = 'ACTIVE'
+    AND d.Capitalization = TRUE
+ORDER BY Expected_Profit DESC;
+Запрос 8: Сравнение текущих цен с ценами покупки для ценных бумаг
+
+sql
+SELECT 
+    i.Investment_ID,
+    i.Client_ID,
+    i.Security_ID,
+    i.Purchase_Rate as Buy_Price,
+    i.Quantity,
+    qh.Close_Price as Current_Price,
+    ROUND((qh.Close_Price - i.Purchase_Rate) * i.Quantity, 2) as Total_Profit_Loss,
+    ROUND((qh.Close_Price - i.Purchase_Rate) / i.Purchase_Rate * 100, 2) as Profit_Percent
+FROM INVESTMENT i
+CROSS JOIN (SELECT Security_ID, Close_Price 
+            FROM QUOTE_HISTORY 
+            WHERE Quote_Date = (SELECT MAX(Quote_Date) FROM QUOTE_HISTORY)) qh
+WHERE i.Investment_Type = 'SECURITY' 
+    AND i.Status = 'ACTIVE'
+    AND i.Security_ID = qh.Security_ID
+ORDER BY Total_Profit_Loss DESC;
+Запрос 9: Банки с наибольшим количеством привлеченных депозитных инвестиций
+
+sql
+SELECT 
+    d.Bank_Name,
+    COUNT(i.Investment_ID) as Number_of_Investments,
+    SUM(i.Amount) as Total_Amount,
+    AVG(i.Amount) as Average_Amount,
+    MAX(i.Amount) as Max_Amount
+FROM INVESTMENT i
+INNER JOIN DEPOSIT d ON i.Deposit_ID = d.Deposit_ID
+WHERE i.Investment_Type = 'DEPOSIT' 
+    AND i.Status = 'ACTIVE'
+GROUP BY d.Bank_Name
+ORDER BY Total_Amount DESC;
+Запрос 10: Инвестиции, приближающиеся к дате окончания
+
+sql
+SELECT 
+    i.Investment_ID,
+    i.Client_ID,
+    i.Investment_Type,
+    i.Amount,
+    i.Purchase_Date,
+    i.Expected_End_Date,
+    DATEDIFF(i.Expected_End_Date, CURDATE()) as Days_Until_End
+FROM INVESTMENT i
+WHERE i.Status = 'ACTIVE' 
+    AND i.Expected_End_Date IS NOT NULL
+    AND i.Expected_End_Date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+ORDER BY Days_Until_End ASC;
