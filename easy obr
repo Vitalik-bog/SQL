@@ -1,0 +1,127 @@
+Запрос 1: Выборка всех активных депозитов с сортировкой по процентной ставке
+
+sql
+SELECT 
+    Deposit_ID,
+    Bank_Name,
+    Deposit_Name,
+    Interest_Rate,
+    Term_Months,
+    Min_Amount,
+    Currency
+FROM DEPOSIT 
+WHERE Is_Available = TRUE 
+ORDER BY Interest_Rate DESC;
+Запрос 2: Подсчет количества депозитов по банкам
+
+sql
+SELECT 
+    Bank_Name,
+    COUNT(*) as Total_Deposits,
+    AVG(Interest_Rate) as Avg_Interest_Rate
+FROM DEPOSIT 
+WHERE Is_Available = TRUE 
+GROUP BY Bank_Name 
+ORDER BY Total_Deposits DESC;
+Запрос 3: Десять последних котировок с наибольшим объемом торгов
+
+sql
+SELECT 
+    Security_ID,
+    Quote_Date,
+    Close_Price,
+    Volume
+FROM QUOTE_HISTORY 
+ORDER BY Volume DESC 
+LIMIT 10;
+Запрос 4: Депозиты с капитализацией и возможностью досрочного снятия
+
+sql
+SELECT 
+    Deposit_Name,
+    Bank_Name,
+    Interest_Rate,
+    Term_Months
+FROM DEPOSIT 
+WHERE Capitalization = TRUE 
+    AND Early_Withdrawal = TRUE 
+    AND Is_Available = TRUE;
+Запрос 5: Средняя процентная ставка по депозитам в зависимости от срока
+
+sql
+SELECT 
+    Term_Months,
+    COUNT(*) as Deposit_Count,
+    AVG(Interest_Rate) as Avg_Rate,
+    MIN(Interest_Rate) as Min_Rate,
+    MAX(Interest_Rate) as Max_Rate
+FROM DEPOSIT 
+WHERE Is_Available = TRUE 
+GROUP BY Term_Months 
+ORDER BY Term_Months;
+Запрос 6: Активные инвестиции клиентов с суммой более 100000
+
+sql
+SELECT 
+    Client_ID,
+    Investment_Type,
+    COUNT(*) as Investment_Count,
+    SUM(Amount) as Total_Amount
+FROM INVESTMENT 
+WHERE Status = 'ACTIVE' 
+    AND Amount > 100000
+GROUP BY Client_ID, Investment_Type 
+ORDER BY Total_Amount DESC;
+Запрос 7: Котировки с максимальным дневным изменением цены
+
+sql
+SELECT 
+    Security_ID,
+    Quote_Date,
+    Open_Price,
+    Close_Price,
+    ROUND(((Close_Price - Open_Price) / Open_Price * 100), 2) as Daily_Change_Percent
+FROM QUOTE_HISTORY 
+WHERE Open_Price IS NOT NULL 
+    AND Open_Price > 0
+ORDER BY ABS(Close_Price - Open_Price) DESC 
+LIMIT 15;
+Запрос 8: Депозиты с минимальной суммой вклада до 50000 рублей
+
+sql
+SELECT 
+    Deposit_Name,
+    Bank_Name,
+    Interest_Rate,
+    Min_Amount,
+    Term_Months
+FROM DEPOSIT 
+WHERE Min_Amount <= 50000 
+    AND Currency = 'RUB' 
+    AND Is_Available = TRUE 
+ORDER BY Interest_Rate DESC;
+Запрос 9: Статистика по инвестициям по типам
+
+sql
+SELECT 
+    Investment_Type,
+    COUNT(*) as Total_Investments,
+    SUM(Amount) as Total_Amount,
+    AVG(Amount) as Avg_Amount,
+    MIN(Amount) as Min_Amount,
+    MAX(Amount) as Max_Amount
+FROM INVESTMENT 
+GROUP BY Investment_Type;
+Запрос 10: Инвестиции, сделанные за последние 30 дней
+
+sql
+SELECT 
+    Investment_ID,
+    Client_ID,
+    Investment_Type,
+    Amount,
+    Purchase_Date
+FROM INVESTMENT 
+WHERE Purchase_Date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) 
+    AND Status = 'ACTIVE'
+ORDER BY Purchase_Date DESC;
