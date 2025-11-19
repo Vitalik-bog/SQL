@@ -1,0 +1,15 @@
+-- WHERE: Найти все продажи товара с id=5 (фильтрация строк)
+SELECT * FROM Sales WHERE product_id = 5;
+
+-- HAVING: Найти товары, общая выручка по которым больше 10000 (фильтрация групп)
+SELECT product_id, SUM(revenue) as total_revenue
+FROM Sales
+GROUP BY product_id
+HAVING SUM(revenue) > 10000;
+
+-- Комбинация: Сначала отфильтровать строки по дате (WHERE), потом сгруппировать и отфильтровать группы (HAVING)
+SELECT product_id, SUM(revenue) as total_revenue
+FROM Sales
+WHERE sale_date > '2023-10-01'
+GROUP BY product_id
+HAVING SUM(revenue) > 5000;
