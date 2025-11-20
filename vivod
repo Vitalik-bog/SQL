@@ -1,0 +1,44 @@
+package main
+
+import (
+    "database/sql"
+    "fmt"
+    "log"
+
+    _ "github.com/go-sql-driver/mysql"
+)
+
+func main() {
+    // Подключение к БД
+    dsn := "username:password@tcp(localhost:3306)/my_database"
+    db, err := sql.Open("mysql", dsn)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
+
+    // Проверка соединения
+    if err := db.Ping(); err != nil {
+        log.Fatal("Connection failed:", err)
+    }
+
+    // Запрос для получения списка таблиц в MySQL
+    rows, err := db.Query("SHOW TABLES")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer rows.Close()
+
+    fmt.Println("Tables in the database:")
+    var tableName string
+    for rows.Next() {
+        if err := rows.Scan(&tableName); err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println("-", tableName)
+    }
+
+    if err := rows.Err(); err != nil {
+        log.Fatal(err)
+    }
+}
