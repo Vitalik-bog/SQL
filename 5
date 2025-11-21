@@ -1,0 +1,29 @@
+package main
+
+import (
+    "database/sql"
+    "fmt"
+    "log"
+
+    _ "github.com/go-sql-driver/mysql"
+)
+
+func main() {
+    // DSN для MySQL
+    dsn := "username:password@tcp(localhost:3306)/my_database?parseTime=true"
+    
+    // Открываем соединение
+    db, err := sql.Open("mysql", dsn)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close() // Закрываем соединение при выходе из функции
+
+    // Проверяем соединение
+    err = db.Ping()
+    if err != nil {
+        log.Fatal("Connection failed:", err)
+    }
+
+    fmt.Println("Successfully connected to database!")
+}
