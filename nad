@@ -1,0 +1,13 @@
+CREATE VIEW SimpleEmployeeView AS
+SELECT employee_id, first_name, last_name
+FROM Employees;
+
+-- Этот запрос будет работать
+UPDATE SimpleEmployeeView SET first_name = 'Николай' WHERE employee_id = 10;
+
+-- А это представление (с агрегатной функцией) - нет
+CREATE VIEW DepartmentBudget AS
+SELECT department_id, SUM(salary) as total_salary
+FROM Employees
+GROUP BY department_id;
+-- UPDATE DepartmentBudget ... -- Такой запрос не сработает
