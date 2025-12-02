@@ -1,0 +1,29 @@
+DELIMITER //
+
+-- Триггер, который проверяет просроченные депозиты при вставке/обновлении
+CREATE TRIGGER TRG_Investment_CheckMatured_BeforeInsertUpdate
+BEFORE INSERT ON INVESTMENT
+FOR EACH ROW
+BEGIN
+    -- Для новых депозитов можно добавить логику проверки
+    -- (здесь просто для демонстрации структуры)
+    IF NEW.Investment_Type = 'DEPOSIT' THEN
+        -- Можно добавить проверку срока депозита
+        SET NEW.Current_Value = NEW.Amount;
+    END IF;
+END //
+
+-- Создаем процедуру для закрытия просроченных депозитов
+CREATE PROCEDURE CloseMaturedDeposits()
+BEGIN
+    UPDATE INVESTMENT i
+    JOIN DEPOSIT d ON i.Deposit_ID = d.Deposit_ID
+    SET i.Status = 'MATURED',
+        i.Current_Value = i.Amount * (1 + (d.Interest_Rate / 100) * (d.Term_Months / 12)),
+        i.Updated_Date = CURRENT_TIMESTAMP
+    WHERE i.Investment_Type = 'DEPOSIT'
+        AND i.Status = 'ACTIVE'
+        AND DATE_ADD(i.Purchase_Date, INTERVAL d.Term_Months MONTH) <= CURDATE();
+END //
+
+DELIMITER ;
