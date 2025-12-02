@@ -1,0 +1,53 @@
+-- Просмотр всех триггеров в базе данных
+SHOW TRIGGERS;
+
+-- Просмотр триггеров для конкретной таблицы
+SHOW TRIGGERS LIKE 'INVESTMENT';
+
+-- Просмотр создания конкретного триггера
+SHOW CREATE TRIGGER TRG_Investment_Quantity_BeforeInsert;
+
+-- Удаление триггера
+-- DROP TRIGGER IF EXISTS TRG_Investment_Quantity_BeforeInsert;
+
+-- Отключение проверки внешних ключей (для тестирования)
+SET FOREIGN_KEY_CHECKS = 0;
+-- Тестовые операции
+SET FOREIGN_KEY_CHECKS = 1;
+Комплексное тестирование всех триггеров
+sql
+-- 1. Тест триггера автоматического расчета количества
+INSERT INTO INVESTMENT (Client_ID, Security_ID, Deposit_ID, Investment_Type, Amount, Purchase_Date, Purchase_Rate, Status) 
+VALUES (2, 2, NULL, 'SECURITY', 300000.00, '2024-03-01', 165.80, 'ACTIVE');
+
+SELECT Investment_ID, Amount, Purchase_Rate, Quantity 
+FROM INVESTMENT WHERE Investment_ID = LAST_INSERT_ID();
+
+-- 2. Тест триггера минимальной суммы
+-- Должен вызвать ошибку
+INSERT INTO INVESTMENT (Client_ID, Security_ID, Deposit_ID, Investment_Type, Amount, Purchase_Date, Purchase_Rate, Status) 
+VALUES (2, NULL, 2, 'DEPOSIT', 500.00, '2024-03-01', 8.5, 'ACTIVE');
+
+-- 3. Тест триггера истории статусов
+UPDATE INVESTMENT 
+SET Status = 'SOLD', 
+    Sale_Date = CURDATE(),
+    Sale_Rate = 170.00
+WHERE Investment_ID = LAST_INSERT_ID() - 1;
+
+SELECT * FROM INVESTMENT_STATUS_HISTORY 
+WHERE Investment_ID = LAST_INSERT_ID() - 1;
+
+-- 4. Тест триггера обновления текущей стоимости
+INSERT INTO QUOTE_HISTORY (Security_ID, Quote_Date, Open_Price, Close_Price, High_Price, Low_Price, Volume)
+VALUES (2, '2024-03-02', 166.50, 168.90, 169.50, 166.00, 2200000);
+
+SELECT i.Investment_ID, i.Current_Value, ROUND(i.Quantity * 168.90, 2) as Calculated
+FROM INVESTMENT i WHERE i.Security_ID = 2 AND i.Status = 'ACTIVE';
+
+-- 5. Тест триггера целостности типа
+-- Должен вызвать ошибку
+UPDATE INVESTMENT 
+SET Security_ID = NULL, 
+    Deposit_ID = 1
+WHERE Investment_ID = 3 AND Investment_Type = 'SECURITY';
