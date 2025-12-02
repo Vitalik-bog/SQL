@@ -1,0 +1,53 @@
+https://github.com/Vitalik-bog/SQL/tree/mainDELIMITER //
+
+-- Триггер, который автоматически рассчитывает количество ценных бумаг при вставке инвестиции
+CREATE TRIGGER TRG_Investment_Quantity_BeforeInsert
+BEFORE INSERT ON INVESTMENT
+FOR EACH ROW
+BEGIN
+    -- Если это инвестиция в ценную бумагу и Purchase_Rate > 0
+    IF NEW.Investment_Type = 'SECURITY' AND NEW.Purchase_Rate > 0 THEN
+        -- Рассчитываем количество: Сумма / Цена покупки
+        SET NEW.Quantity = NEW.Amount / NEW.Purchase_Rate;
+    ELSE
+        -- Для депозитов количество не рассчитывается
+        SET NEW.Quantity = NULL;
+    END IF;
+    
+    -- Автоматически устанавливаем Current_Value равным Amount для новых инвестиций
+    SET NEW.Current_Value = NEW.Amount;
+END //
+
+DELIMITER ;
+
+Тестирование триггера:
+
+sql
+-- Вставляем инвестицию в ценную бумагу (триггер рассчитает Quantity автоматически)
+INSERT INTO INVESTMENT (Client_ID, Security_ID, Deposit_ID, Investment_Type, Amount, Purchase_Date, Purchase_Rate, Status) 
+VALUES (1, 1, NULL, 'SECURITY', 500000.00, '2024-03-01', 280.50, 'ACTIVE');
+
+-- Проверяем результат
+SELECT 
+    Investment_ID,
+    Amount,
+    Purchase_Rate,
+    Quantity,
+    ROUND(Amount / Purchase_Rate, 6) as Calculated_Quantity,
+    Current_Value
+FROM INVESTMENT 
+WHERE Investment_ID = LAST_INSERT_ID();
+
+-- Вставляем инвестицию в депозит
+INSERT INTO INVESTMENT (Client_ID, Security_ID, Deposit_ID, Investment_Type, Amount, Purchase_Date, Purchase_Rate, Status) 
+VALUES (1, NULL, 1, 'DEPOSIT', 1000000.00, '2024-03-01', 8.5, 'ACTIVE');
+
+-- Проверяем результат
+SELECT 
+    Investment_ID,
+    Amount,
+    Purchase_Rate,
+    Quantity,
+    Current_Value
+FROM INVESTMENT 
+WHERE Investment_ID = LAST_INSERT_ID();
