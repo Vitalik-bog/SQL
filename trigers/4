@@ -1,0 +1,46 @@
+DELIMITER //
+
+-- Триггер для обновления Current_Value при изменении котировок
+CREATE TRIGGER TRG_QuoteHistory_AfterInsert
+AFTER INSERT ON QUOTE_HISTORY
+FOR EACH ROW
+BEGIN
+    -- Обновляем текущую стоимость всех активных инвестиций в эту ценную бумагу
+    UPDATE INVESTMENT i
+    SET i.Current_Value = i.Quantity * NEW.Close_Price,
+        i.Updated_Date = CURRENT_TIMESTAMP
+    WHERE i.Security_ID = NEW.Security_ID
+        AND i.Status = 'ACTIVE'
+        AND i.Quantity IS NOT NULL;
+END //
+
+DELIMITER ;
+Тестирование триггера:
+
+sql
+-- Проверяем текущую стоимость инвестиций перед обновлением
+SELECT 
+    i.Investment_ID,
+    i.Security_ID,
+    i.Quantity,
+    i.Current_Value,
+    (SELECT Close_Price FROM QUOTE_HISTORY 
+     WHERE Security_ID = i.Security_ID 
+     ORDER BY Quote_Date DESC LIMIT 1) as Latest_Price
+FROM INVESTMENT i
+WHERE i.Security_ID = 1 AND i.Status = 'ACTIVE';
+
+-- Добавляем новую котировку (триггер обновит Current_Value)
+INSERT INTO QUOTE_HISTORY (Security_ID, Quote_Date, Open_Price, Close_Price, High_Price, Low_Price, Volume)
+VALUES (1, '2024-03-02', 285.00, 290.75, 292.00, 284.50, 1800000);
+
+-- Проверяем обновленную стоимость
+SELECT 
+    i.Investment_ID,
+    i.Security_ID,
+    i.Quantity,
+    i.Current_Value as New_Value,
+    ROUND(i.Quantity * 290.75, 2) as Calculated_Value,
+    i.Updated_Date
+FROM INVESTMENT i
+WHERE i.Security_ID = 1 AND i.Status = 'ACTIVE';
