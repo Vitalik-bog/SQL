@@ -1,0 +1,42 @@
+DELIMITER //
+
+-- Триггер для проверки целостности типа инвестиции при обновлении
+CREATE TRIGGER TRG_Investment_Integrity_BeforeUpdate
+BEFORE UPDATE ON INVESTMENT
+FOR EACH ROW
+BEGIN
+    -- Проверяем, что тип инвестиции соответствует заполненным полям
+    IF NEW.Investment_Type = 'SECURITY' THEN
+        IF NEW.Security_ID IS NULL OR NEW.Deposit_ID IS NOT NULL THEN
+            SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'Для инвестиции типа SECURITY должен быть указан Security_ID, а Deposit_ID должен быть NULL';
+        END IF;
+    ELSEIF NEW.Investment_Type = 'DEPOSIT' THEN
+        IF NEW.Deposit_ID IS NULL OR NEW.Security_ID IS NOT NULL THEN
+            SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'Для инвестиции типа DEPOSIT должен быть указан Deposit_ID, а Security_ID должен быть NULL';
+        END IF;
+    END IF;
+END //
+
+DELIMITER ;
+Тестирование триггера:
+
+sql
+-- Попытка некорректного обновления: для SECURITY указать Deposit_ID
+UPDATE INVESTMENT 
+SET Deposit_ID = 1
+WHERE Investment_ID = 2 AND Investment_Type = 'SECURITY';
+-- Ожидаем ошибку
+
+-- Попытка некорректного обновления: для DEPOSIT указать Security_ID
+UPDATE INVESTMENT 
+SET Security_ID = 1
+WHERE Investment_ID = 6 AND Investment_Type = 'DEPOSIT';
+-- Ожидаем ошибку
+
+-- Корректное обновление
+UPDATE INVESTMENT 
+SET Security_ID = 2
+WHERE Investment_ID = 2 AND Investment_Type = 'SECURITY';
+-- Должно быть успешно
