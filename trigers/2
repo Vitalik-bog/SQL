@@ -1,0 +1,66 @@
+-- Создаем таблицу для хранения истории изменений статуса инвестиций
+CREATE TABLE IF NOT EXISTS INVESTMENT_STATUS_HISTORY (
+    History_ID BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    Investment_ID BIGINT NOT NULL,
+    Old_Status ENUM('ACTIVE', 'SOLD', 'MATURED', 'CANCELLED'),
+    New_Status ENUM('ACTIVE', 'SOLD', 'MATURED', 'CANCELLED'),
+    Change_Date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Changed_By VARCHAR(100) DEFAULT USER(),
+    
+    CONSTRAINT FK_StatusHistory_Investment FOREIGN KEY (Investment_ID)
+        REFERENCES INVESTMENT(Investment_ID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+        
+    INDEX IDX_StatusHistory_Investment (Investment_ID),
+    INDEX IDX_StatusHistory_Date (Change_Date)
+) ENGINE=InnoDB COMMENT = 'История изменений статуса инвестиций';
+
+DELIMITER //
+
+-- Триггер для записи истории изменений статуса
+CREATE TRIGGER TRG_Investment_Status_AfterUpdate
+AFTER UPDATE ON INVESTMENT
+FOR EACH ROW
+BEGIN
+    -- Если статус изменился
+    IF OLD.Status != NEW.Status THEN
+        INSERT INTO INVESTMENT_STATUS_HISTORY (
+            Investment_ID, 
+            Old_Status, 
+            New_Status
+        ) VALUES (
+            NEW.Investment_ID,
+            OLD.Status,
+            NEW.Status
+        );
+    END IF;
+END //
+
+DELIMITER ;
+Тестирование триггера:
+
+sql
+-- Проверяем текущий статус инвестиции
+SELECT Investment_ID, Status FROM INVESTMENT WHERE Investment_ID = 1;
+
+-- Изменяем статус инвестиции
+UPDATE INVESTMENT 
+SET Status = 'SOLD', 
+    Sale_Date = CURDATE(),
+    Sale_Rate = 300.00
+WHERE Investment_ID = 1;
+
+-- Проверяем запись в истории
+SELECT * FROM INVESTMENT_STATUS_HISTORY 
+WHERE Investment_ID = 1 
+ORDER BY Change_Date DESC;
+
+-- Изменяем статус еще раз
+UPDATE INVESTMENT 
+SET Status = 'CANCELLED'
+WHERE Investment_ID = 1;
+
+-- Проверяем все записи в истории
+SELECT * FROM INVESTMENT_STATUS_HISTORY 
+ORDER BY Change_Date DESC;
