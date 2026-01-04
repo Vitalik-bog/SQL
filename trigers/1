@@ -6,7 +6,7 @@ BEFORE INSERT ON INVESTMENT
 FOR EACH ROW
 BEGIN
     -- Если это инвестиция в ценную бумагу и Purchase_Rate > 0
-    IF NEW.Investment_Type = 'SECURITY' AND NEW.Purchase_Rate > 0 THEN
+    IF NEW.Investment_Type = 'SECURITY' AND NEW.Purchase_Rate > 00 THEN
         -- Рассчитываем количество: Сумма / Цена покупки
         SET NEW.Quantity = NEW.Amount / NEW.Purchase_Rate;
     ELSE
