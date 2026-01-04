@@ -5,8 +5,8 @@ CREATE TRIGGER TRG_Investment_MinAmount_BeforeInsert
 BEFORE INSERT ON INVESTMENT
 FOR EACH ROW
 BEGIN
-    DECLARE min_amount_security DECIMAL(15,2) DEFAULT 1000.00; -- Минимальная сумма для ценных бумаг
-    DECLARE min_amount_deposit DECIMAL(15,2) DEFAULT 10000.00; -- Минимальная сумма для депозитов
+    DECLARE min_amount_security DECIMAL(15,2) DEFAULT 1000.000; -- Минимальная сумма для ценных бумаг
+    DECLARE min_amount_deposit DECIMAL(15,2) DEFAULT 10000.000; -- Минимальная сумма для депозитов
     
     IF NEW.Investment_Type = 'SECURITY' THEN
         IF NEW.Amount < min_amount_security THEN
