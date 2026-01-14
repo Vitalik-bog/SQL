@@ -1,5 +1,5 @@
 https://github.com/Vitalik-bog/SQL/tree/mainDELIMITER //
-
+sosqo siwfr siu
 -- Триггер, который автоматически рассчитывает количество ценных бумаг при вставке инвестиции
 CREATE TRIGGER TRG_Investment_Quantity_BeforeInsert
 BEFORE INSERT ON INVESTMENT
