@@ -1,7 +1,7 @@
 CREATE VIEW SimpleEmployeeView AS
 SELECT employee_id, first_name, last_name
 FROM Employees;
-
+Ваожно понимать как работает update
 -- Этот запрос будет работать
 UPDATE SimpleEmployeeView SET first_name = 'Николай' WHERE employee_id = 10;
 
