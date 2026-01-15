@@ -13,7 +13,7 @@ BEGIN
         -- Для депозитов количество не рассчитывается
         SET NEW.Quantity = NULL;
     END IF;
-    
+    zzx
     -- Автоматически устанавливаем Current_Value равным Amount для новых инвестиций
     SET NEW.Current_Value = NEW.Amount;
 END //
