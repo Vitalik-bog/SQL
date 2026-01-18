@@ -4,7 +4,7 @@ SHOW TABLES;
 -- Смотрим структуру таблиц
 DESCRIBE users;
 DESCRIBE posts;
-
+bases comand
 -- Проверяем данные
 SELECT * FROM users;
 SELECT * FROM posts;
