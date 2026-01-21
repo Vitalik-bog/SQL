@@ -21,7 +21,10 @@ func main() {
     if err := db.Ping(); err != nil {
         log.Fatal("Connection failed:", err)
     }
-
+// if err := db.Ping(); err != nil {
+        log.Fatal("Connection failed:", err)
+    }
+//
     // Запрос для получения списка таблиц в MySQL
     rows, err := db.Query("SHOW TABLES")
     if err != nil {
