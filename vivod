@@ -45,3 +45,24 @@ func main() {
         log.Fatal(err)
     }
 }
+
+// Запрос для получения списка таблиц в MySQL
+    rows, err := db.Query("SHOW TABLES")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer rows.Close()
+
+    fmt.Println("Tables in the database:")
+    var tableName string
+    for rows.Next() {
+        if err := rows.Scan(&tableName); err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println("-", tableName)
+    }
+
+    if err := rows.Err(); err != nil {
+        log.Fatal(err)
+    }
+}
